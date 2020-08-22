@@ -1,0 +1,25 @@
+Things to do:
+    1) Plot steps and raw rewards for both, like in the publication
+    2) Compare values of raw and transformed rewards, and explore statistically (correlations, etc.,
+       to see if we can perhaps optimize with another function)
+    3) Compare learned policies, and see what they do differently and if, given the rewards, we can 
+       figure out why (for example, the case where the agent didn't distinguish between 1 or 10 pins
+       in bowling)
+
+On (3), the rewards are adjusted like this:
+                            ri = np.sign(ri) * self.reward_constant + ri
+In a3c_training_thread.py, line 214. I need to dig into the code and the results a little further, 
+to see if the RAW rewards are written to the results file, or if the adjusted ones are. I *think* it
+is the adjusted ones...really, both need to be stored.
+
+(21 August 2020, 4:47 PM) Update:
+Okay. It seems like it's actually the raw reward from the episode that is stored in the results .pkl
+file. (Lines 152-187, a3c_training_thread.py) And it then seems like the transformed rewards are 
+computed just below, when the gradients are being figured out. So, IN THEORY, a hacky way to get both
+rewards in the results file would be to just: (...)
+
+(21 August 2020, 5:45 PM) Update:
+Yeah, so it looks like what gets written to the results file is the total number of steps taken by
+ALL 16 AGENTS, the TOTAL REWARD accumulated...thus far? Or in this latest round of training? 
+(Presumably the latter, but I need to confirm that with Yunshu.) For a helpful reminder, look at this
+article: https://medium.com/@shagunm1210/implementing-the-a3c-algorithm-to-train-an-agent-to-play-breakout-c0b5ce3b3405
