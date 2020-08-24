@@ -45,6 +45,7 @@ with open(results_file, 'rb') as datafile:
     plt.ylabel('Reward Value')
     plt.title(plot_name)
     plt.savefig('plots/' + plot_name + '-train-fig.png')
+    plt.close()
 
     ################## Do the same as above, but for the evaluation ################################
     rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['reward', 'avg_steps', 'episode']).reset_index()
@@ -53,6 +54,8 @@ with open(results_file, 'rb') as datafile:
     # Get the rewards and timesteps
     eval_steps = np.array(rewards_eval_df.index)
     reward_eval_values = np.array(rewards_eval_df['reward'])
+    print(eval_steps)
+    print(reward_eval_values)
     
     # Plot the time steps and the rewards
     plt.plot(eval_steps, reward_eval_values, color='green', marker='o')
@@ -60,6 +63,7 @@ with open(results_file, 'rb') as datafile:
     plt.ylabel('Reward Value')
     plt.title(plot_name)
     plt.savefig('plots/' + plot_name + '-eval-fig.png')
+    plt.close()
 
 """
 Eval reward is the max score at each
