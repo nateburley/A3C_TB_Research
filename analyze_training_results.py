@@ -29,7 +29,7 @@ with open(results_file, 'rb') as datafile:
     # Load the file; print the results (for debugging)
     rewards = pickle.load(datafile)
 
-    # Load file into dataframe
+    # Load file into dataframe (training results)
     rewards_df = pd.DataFrame.from_dict(rewards['train'], orient='index', columns=['global_time', 'reward']).reset_index()
     print(rewards_df.head(10))
 
@@ -42,4 +42,34 @@ with open(results_file, 'rb') as datafile:
     plt.xlabel('Number of Timesteps')
     plt.ylabel('Reward Value')
     plt.title(plot_name)
-    plt.savefig('plots/' + plot_name + '-fig.png')
+    plt.savefig('plots/' + plot_name + '-train-fig.png')
+
+    ################## Do the same as above, but for the evaluation ################################
+    rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['global_time', 'reward']).reset_index()
+    print(rewards_eval_df.head(10))
+
+    # Get the rewards and timesteps
+    eval_steps = np.array(rewards_eval_df.index)
+    reward_eval_values = np.array(rewards_eval_df['reward'])
+    
+    # Plot the time steps and the rewards
+    plt.plot(eval_steps, reward_eval_values, color='green', marker='o')
+    plt.xlabel('Number of Steps')
+    plt.ylabel('Reward Value')
+    plt.title(plot_name)
+    plt.savefig('plots/' + plot_name + '-eval-fig.png')
+
+"""
+Eval reward is the max score at each
+- training reward is the average for one worker in its 20 steps (or until terminal)
+- updating is done with one worker at a time-- adds how many steps it did and what rewards it got, basically
+
+- transformed reward is computed in the training code, I just need to add more code to log it
+
+- "KL divergence" between the two policies...distance between two distributions? (Could possibly be
+used to compare the policies between two agents)
+    - TB is for learning with high variance. Do NOT need to focus on this right now. 
+
+- Good focus for this week would be a plot of raw reward, and a plot of transformed rewards, so we
+can see if there's a correlation
+"""
