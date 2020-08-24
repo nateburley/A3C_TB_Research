@@ -2,6 +2,8 @@
 This file will plot and analyze the results of training A3C (timesteps and rewards)
 Use: python analyze_training_results.py /path/to/pkl/results plot_name
 
+Ex.: python analyze_training_results.py /data/datascience/A3C_TB_Research/results/A3Ca3c/MsPacmanNoFrameskip_v4_5/MsPacmanNoFrameskip_v4-a3c-rewards.pkl MsPacman-A3C
+
 Author: Nathaniel M. Burley
 Date: 15th August, 2020
 """
@@ -45,7 +47,7 @@ with open(results_file, 'rb') as datafile:
     plt.savefig('plots/' + plot_name + '-train-fig.png')
 
     ################## Do the same as above, but for the evaluation ################################
-    rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['global_time', 'reward']).reset_index()
+    rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['reward', 'avg_steps', 'episode']).reset_index()
     print(rewards_eval_df.head(10))
 
     # Get the rewards and timesteps
