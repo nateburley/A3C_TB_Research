@@ -34,4 +34,4 @@ singularity exec -H $cwd $image python3 DeepRL/run_experiment.py \
     --use-mnih-2015 --padding=SAME --input-shape=88 \
     --append-experiment-num=${PBS_ARRAYID} \
     --transformed-bellman \ ## Use the Transformed Bellman operator in the experiment
-    --save-to=/data/datascience/A3C_TB_Research/results/TB \
+    --save-to=/data/datascience/A3C_TB_Research/results/ \
