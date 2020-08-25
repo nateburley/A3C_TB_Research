@@ -62,7 +62,7 @@ with open(results_file, 'rb') as datafile:
     # Plot the time steps and the rewards
     plt.plot(eval_steps, reward_eval_values, color='green', marker='o', label='Raw Reward')
     plt.plot(eval_steps, trans_eval_values, color='red', marker='o', label='Transformed Reward')
-    plt.xlabel('Number of Steps')
+    plt.xlabel('Number of Steps (Thousands)')
     plt.ylabel('Reward Value')
     plt.legend(['Raw Reward', 'Transformed Reward'])
     plt.title(plot_name)
