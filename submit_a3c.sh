@@ -8,8 +8,8 @@
 #PBS -l nodes=1:ppn=8                    	## Number of processor needed per task, 8 is a good balance between speed vs.#jobs can run
 #PBS -q datascience                             ## queue on "datascience" group, can also use "batch" (I'm not sure what's the diff tho..)
 #PBS -k o					## keep output file
-#PBS -e /data/datascience/A3C_TB_Research/logs/       ## error file directory; this is where you can see the output logs
-#PBS -o /data/datascience/A3C_TB_Research/logs/       ## output file directory
+#PBS -e /data/datascience/A3C_TB_Research/logs/A3C       ## error file directory; this is where you can see the output logs
+#PBS -o /data/datascience/A3C_TB_Research/logs/A3C       ## output file directory
 #PBS -t 1-6 					## number of trials to run; here submit 3 trials together, usually want 5+ trials to get the average
 
 module load python/3.7

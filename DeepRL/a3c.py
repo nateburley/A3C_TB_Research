@@ -13,12 +13,15 @@ import time
 import pandas as pd
 import math
 import tensorflow as tf
+import csv
 
 from threading import Event, Thread
 from common_worker import CommonWorker
 from a3c_training_thread import A3CTrainingThread
 from common.game_state import GameState
 from common.util import prepare_dir
+from common.util import transform_h
+from common.util import transform_h_inv
 from game_ac_network import GameACFFNetwork
 from queue import Queue
 from copy import deepcopy
@@ -180,9 +183,10 @@ def run_a3c(args):
         with lock:
             # Evaluate model before training
             if not stop_req and global_t == 0 and step_t == 0:
-                rewards['eval'][step_t] = parallel_worker.testing(
-                    sess, args.eval_max_steps, global_t, folder,
-                    worker=all_workers[-1])
+                # Log the reward, and the transformed reward
+                reward_t = parallel_worker.testing(sess, args.eval_max_steps, global_t, folder, worker=all_workers[-1])[0]
+                trans_reward_t = transform_h(reward_t + 0.99 * transform_h_inv(reward_t))
+                rewards['eval'][step_t] = [reward_t, trans_reward_t]
                 # save checkpoint
                 checkpt_file = folder / 'model_checkpoints'
                 checkpt_file /= '{}_checkpoint'.format(GYM_ENV_NAME)
@@ -232,10 +236,11 @@ def run_a3c(args):
 
                     step_t = int(next_global_t - args.eval_freq)
                     # test A3C agent
-                    rewards['eval'][step_t] = parallel_worker.testing(
-                        sess, args.eval_max_steps, step_t, folder, worker=all_workers[-1])
+                    reward_t = parallel_worker.testing(sess, args.eval_max_steps, global_t, folder, worker=all_workers[-1])[0]
+                    trans_reward_t = transform_h(reward_t + 0.99 * transform_h_inv(reward_t))
+                    rewards['eval'][step_t] = [reward_t, trans_reward_t]
+                    print("\n\n\nGLOBAL_T: {}\nREWARD: {}\nTRANS REWARD: {}\ R[EVAL]: {}\n\n\n".format(global_t, reward_t, trans_reward_t, rewards['eval'][step_t]))
                     save_best_model(rewards['eval'][step_t][0])
-                    last_reward = rewards['eval'][step_t][0]
 
                 if global_t > next_save_t:
                     next_save_t = next_t(global_t, args.eval_freq*args.checkpoint_freq)
@@ -248,7 +253,6 @@ def run_a3c(args):
                     reward_fname = folder / '{}-a3c-rewards.pkl'.format(GYM_ENV_NAME)
                     pickle.dump(rewards, reward_fname.open('wb'), pickle.HIGHEST_PROTOCOL)
                     logger.info('Dump pickle at step {}'.format(global_t))
-
 
     def signal_handler(signal, frame):
         nonlocal stop_req

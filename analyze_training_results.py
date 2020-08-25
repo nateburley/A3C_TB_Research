@@ -1,7 +1,8 @@
 """
-This file will plot and analyze the results of training A3C (timesteps and rewards)
-Use: python analyze_training_results.py /path/to/pkl/results plot_name
+This file will plot and analyze the results of training A3C (timesteps and rewards). Later, once
+we have more results, we can examine correlations and relationships in more detail (TODO)
 
+Use: python analyze_training_results.py /path/to/pkl/results plot_name
 Ex.: python analyze_training_results.py /data/datascience/A3C_TB_Research/results/A3Ca3c/MsPacmanNoFrameskip_v4_5/MsPacmanNoFrameskip_v4-a3c-rewards.pkl MsPacman-A3C
 
 Author: Nathaniel M. Burley
@@ -30,9 +31,10 @@ print("Results file: {}".format(results_file)) # Debugging
 with open(results_file, 'rb') as datafile:
     # Load the file; print the results (for debugging)
     rewards = pickle.load(datafile)
+    print(rewards)
 
     # Load file into dataframe (training results)
-    rewards_df = pd.DataFrame.from_dict(rewards['train'], orient='index', columns=['global_time', 'reward']).reset_index()
+    rewards_df = pd.DataFrame.from_dict(rewards['train'], orient='index', columns=['reward', 'trans_reward', 'episode_steps']).reset_index()
     print(rewards_df.head(10))
 
     # Get the rewards and timesteps
@@ -46,21 +48,23 @@ with open(results_file, 'rb') as datafile:
     plt.title(plot_name)
     plt.savefig('plots/' + plot_name + '-train-fig.png')
     plt.close()
-
+    
     ################## Do the same as above, but for the evaluation ################################
-    rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['reward', 'avg_steps', 'episode']).reset_index()
+    rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['reward', 'transformed_reward']).reset_index()
     print(rewards_eval_df.head(10))
 
     # Get the rewards and timesteps
     eval_steps = np.array(rewards_eval_df.index)
     reward_eval_values = np.array(rewards_eval_df['reward'])
-    print(eval_steps)
-    print(reward_eval_values)
+    trans_eval_values = np.array(rewards_eval_df['transformed_reward'])
     
+
     # Plot the time steps and the rewards
-    plt.plot(eval_steps, reward_eval_values, color='green', marker='o')
+    plt.plot(eval_steps, reward_eval_values, color='green', marker='o', label='Raw Reward')
+    plt.plot(eval_steps, trans_eval_values, color='red', marker='o', label='Transformed Reward')
     plt.xlabel('Number of Steps')
     plt.ylabel('Reward Value')
+    plt.legend(['Raw Reward', 'Transformed Reward'])
     plt.title(plot_name)
     plt.savefig('plots/' + plot_name + '-eval-fig.png')
     plt.close()

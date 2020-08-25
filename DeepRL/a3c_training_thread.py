@@ -97,6 +97,7 @@ class A3CTrainingThread(CommonWorker):
         self.initial_learning_rate = initial_learning_rate
 
         self.episode_reward = 0
+        self.transformed_episode_reward = 0
         self.episode_steps = 0
 
         # variable controlling log output
@@ -152,7 +153,10 @@ class A3CTrainingThread(CommonWorker):
             reward = self.game_state.reward
             terminal = self.game_state.terminal
 
+            # Update rewards
             self.episode_reward += reward
+            if self.transformed_bellman == True:
+                self.transformed_episode_reward += transform_h(reward + self.gamma * transform_h_inv(reward)) # See line 218
 
             if self.reward_type == 'CLIP':
                 reward = np.sign(reward)
@@ -179,8 +183,7 @@ class A3CTrainingThread(CommonWorker):
                         self.episode_steps), "blue")
                     log_msg += " {} {}".format(score_str, steps_str)
                     logger.debug(log_msg)
-                    train_rewards['train'][global_t] = (self.episode_reward,
-                                                        self.episode_steps)
+                    train_rewards['train'][global_t] = (self.episode_reward, self.transformed_episode_reward, self.episode_steps)
                     self.record_summary(
                         score=self.episode_reward, steps=self.episode_steps,
                         episodes=None, global_t=global_t, mode='Train')
@@ -212,8 +215,7 @@ class A3CTrainingThread(CommonWorker):
         for(ai, ri, si, vi) in zip(actions, rewards, states, values):
             if self.transformed_bellman:
                 ri = np.sign(ri) * self.reward_constant + ri
-                cumsum_reward = transform_h(
-                    ri + self.gamma * transform_h_inv(cumsum_reward))
+                cumsum_reward = transform_h(ri + self.gamma * transform_h_inv(cumsum_reward))
             else:
                 cumsum_reward = ri + self.gamma * cumsum_reward
             advantage = cumsum_reward - vi
