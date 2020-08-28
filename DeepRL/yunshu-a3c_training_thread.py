@@ -5,7 +5,6 @@ import numpy as np
 import tensorflow as tf
 import time
 import matplotlib.pyplot as plt
-import pickle
 
 from common.game_state import GameState
 from common.game_state import get_wrapper_by_name
@@ -21,10 +20,6 @@ from copy import deepcopy
 from common_worker import CommonWorker
 
 logger = logging.getLogger("a3c_training_thread")
-
-# Function that dumps the cumulative rewards to a pickle file (for Yumshu's exercise)
-def dump_cumsum_rewards(cumsum_arr, file_name):
-    pickle.dump(cumsum_arr, open(file_name, "a+b"))
 
 
 class A3CTrainingThread(CommonWorker):
@@ -102,7 +97,6 @@ class A3CTrainingThread(CommonWorker):
         self.initial_learning_rate = initial_learning_rate
 
         self.episode_reward = 0
-        self.transformed_episode_reward = 0
         self.episode_steps = 0
 
         # variable controlling log output
@@ -116,10 +110,6 @@ class A3CTrainingThread(CommonWorker):
         rewards = []
         values = []
         rho = []
-
-        # LOGGING ARRAYS
-        cumulative_reward_log = []
-        cumulative_sum_reward_log = []
 
         terminal_pseudo = False  # loss of life
         terminal_end = False  # real terminal (lose all lives)
@@ -162,12 +152,10 @@ class A3CTrainingThread(CommonWorker):
             reward = self.game_state.reward
             terminal = self.game_state.terminal
 
-            # Update rewards
             self.episode_reward += reward
 
             if self.reward_type == 'CLIP':
                 reward = np.sign(reward)
-
             rewards.append(reward)
 
             self.local_t += 1
@@ -191,7 +179,8 @@ class A3CTrainingThread(CommonWorker):
                         self.episode_steps), "blue")
                     log_msg += " {} {}".format(score_str, steps_str)
                     logger.debug(log_msg)
-                    train_rewards['train'][global_t] = (self.episode_reward, self.episode_steps)
+                    train_rewards['train'][global_t] = (self.episode_reward,
+                                                        self.episode_steps)
                     self.record_summary(
                         score=self.episode_reward, steps=self.episode_steps,
                         episodes=None, global_t=global_t, mode='Train')
@@ -209,6 +198,10 @@ class A3CTrainingThread(CommonWorker):
                                interpolation=cv2.INTER_AREA)
             cumsum_reward = self.local_net.run_value(sess, state)
 
+        ###### ADD this code ######
+        raw_reward = cumsum_reward
+        ###### ADD this code ######
+
         actions.reverse()
         states.reverse()
         rewards.reverse()
@@ -223,10 +216,25 @@ class A3CTrainingThread(CommonWorker):
         for(ai, ri, si, vi) in zip(actions, rewards, states, values):
             if self.transformed_bellman:
                 ri = np.sign(ri) * self.reward_constant + ri
-                cumsum_reward = transform_h(ri + self.gamma * transform_h_inv(cumsum_reward))
+                cumsum_reward = transform_h(
+                    ri + self.gamma * transform_h_inv(cumsum_reward)) # <= record this "cumsum_reward" as transformed_reward
             else:
                 cumsum_reward = ri + self.gamma * cumsum_reward
             advantage = cumsum_reward - vi
+            ###### ADD this code ######
+            # add a line here to compute non transformed reward, as in line 222
+            # just because if we are doing transformed_bellman, line 222 won't be executed
+            # and be very careful to *NOT* to use this "raw_reward" for policy update
+            # we just want to see what the raw rewards "look" like, compared to transformed_reward
+            # *NOTE* line 201-203. rewards are cumulative. That's why your current transform_h_inv(reward) is wrong
+            raw_reward = ri + self.gamma * raw_reward # <= record this as raw_reward
+            # you can simply use two arrays to record these rewards:
+            # transformed_reward_array.append(cumsum_reward)
+            # raw_reward_array.append(raw_reward)
+            # "EPISODE_reward" is NOT what we want to look at; your current log on train/eval "EPISODE_reward" is wrong
+            # we need to look at the rewards that were used to UPDATE THE POLICY, which happens here
+            # These are what's shaping the policy, so we are interested in knowing what change will different reward bring to a policy           
+            ###### ADD this code ######
 
             # convert action to one-hot vector
             a = np.zeros([self.action_size])
@@ -236,10 +244,6 @@ class A3CTrainingThread(CommonWorker):
             batch_action.append(a)
             batch_adv.append(advantage)
             batch_cumsum_reward.append(cumsum_reward)
-        
-        # Function I wrote that dumps the array of cumsum rewards
-        dump_cumsum_rewards(batch_cumsum_reward, "cumulative_rewards.pkl")
-        print("\nBATCH CUMSUM REWARDS: {}\nRAW: {}".format(sum(batch_cumsum_reward), batch_cumsum_reward))
 
         cur_learning_rate = self._anneal_learning_rate(global_t,
                 self.initial_learning_rate )

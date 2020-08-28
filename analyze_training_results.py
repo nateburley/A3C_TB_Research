@@ -31,10 +31,10 @@ print("Results file: {}".format(results_file)) # Debugging
 with open(results_file, 'rb') as datafile:
     # Load the file; print the results (for debugging)
     rewards = pickle.load(datafile)
-    print(rewards)
 
     # Load file into dataframe (training results)
     rewards_df = pd.DataFrame.from_dict(rewards['train'], orient='index', columns=['reward', 'trans_reward', 'episode_steps']).reset_index()
+    print("TRAIN REWARDS")
     print(rewards_df.head(10))
 
     # Get the rewards and timesteps
@@ -51,6 +51,7 @@ with open(results_file, 'rb') as datafile:
     
     ################## Do the same as above, but for the evaluation ################################
     rewards_eval_df = pd.DataFrame.from_dict(rewards['eval'], orient='index', columns=['reward', 'transformed_reward']).reset_index()
+    print("\nEVALUATION REWARDS")
     print(rewards_eval_df.head(10))
 
     # Get the rewards and timesteps

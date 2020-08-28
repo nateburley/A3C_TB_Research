@@ -18,4 +18,6 @@ python3 DeepRL/run_experiment.py \
   --max-time-step-fraction=0.5 \
   --use-mnih-2015 --input-shape=88 --padding=SAME \
   --checkpoint-freq=5 \
+  --eval-freq=1000 \
+  --eval-max-steps=5000 \
   --append-experiment-num=${currentDate} \
