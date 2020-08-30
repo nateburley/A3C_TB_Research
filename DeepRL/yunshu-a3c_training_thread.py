@@ -199,7 +199,11 @@ class A3CTrainingThread(CommonWorker):
             cumsum_reward = self.local_net.run_value(sess, state)
 
         ###### ADD this code ######
-        raw_reward = cumsum_reward
+        if self.transformed_bellman:
+            raw_reward = cumsum_reward
+            print("tb_raw_rewards.pkl ", rewards)
+        else:
+            print("a3c_clipped_rewards.pkl ", rewards)
         ###### ADD this code ######
 
         actions.reverse()
@@ -211,30 +215,25 @@ class A3CTrainingThread(CommonWorker):
         batch_action = []
         batch_adv = []
         batch_cumsum_reward = []
+        ###### ADD this code ######
+        if self.transformed_bellman:
+            batch_raw_reward = []
+        ###### ADD this code ######
 
         # compute and accumulate gradients
         for(ai, ri, si, vi) in zip(actions, rewards, states, values):
             if self.transformed_bellman:
                 ri = np.sign(ri) * self.reward_constant + ri
                 cumsum_reward = transform_h(
-                    ri + self.gamma * transform_h_inv(cumsum_reward)) # <= record this "cumsum_reward" as transformed_reward
+                    ri + self.gamma * transform_h_inv(cumsum_reward))
+                ###### ADD this code ######
+                raw_reward = ri + self.gamma * raw_reward
+                ###### ADD this code ######
             else:
                 cumsum_reward = ri + self.gamma * cumsum_reward
+
             advantage = cumsum_reward - vi
-            ###### ADD this code ######
-            # add a line here to compute non transformed reward, as in line 222
-            # just because if we are doing transformed_bellman, line 222 won't be executed
-            # and be very careful to *NOT* to use this "raw_reward" for policy update
-            # we just want to see what the raw rewards "look" like, compared to transformed_reward
-            # *NOTE* line 201-203. rewards are cumulative. That's why your current transform_h_inv(reward) is wrong
-            raw_reward = ri + self.gamma * raw_reward # <= record this as raw_reward
-            # you can simply use two arrays to record these rewards:
-            # transformed_reward_array.append(cumsum_reward)
-            # raw_reward_array.append(raw_reward)
-            # "EPISODE_reward" is NOT what we want to look at; your current log on train/eval "EPISODE_reward" is wrong
-            # we need to look at the rewards that were used to UPDATE THE POLICY, which happens here
-            # These are what's shaping the policy, so we are interested in knowing what change will different reward bring to a policy           
-            ###### ADD this code ######
+
 
             # convert action to one-hot vector
             a = np.zeros([self.action_size])
@@ -244,6 +243,19 @@ class A3CTrainingThread(CommonWorker):
             batch_action.append(a)
             batch_adv.append(advantage)
             batch_cumsum_reward.append(cumsum_reward)
+            ###### ADD this code ######
+            if self.transformed_bellman:
+                batch_raw_reward.append(raw_reward)
+            ###### ADD this code ######
+
+        ###### ADD this code ######
+        if self.transformed_bellman:
+            print("tb_transformed_returns.pkl", batch_cumsum_reward)
+            print("raw_returns.pkl", batch_raw_reward)
+        else:
+            print("a3c_clipped_returns.pkl", batch_cumsum_reward)
+        time.sleep(3)
+        ###### ADD this code ######
 
         cur_learning_rate = self._anneal_learning_rate(global_t,
                 self.initial_learning_rate )

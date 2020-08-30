@@ -6,6 +6,8 @@ import tensorflow as tf
 import time
 import matplotlib.pyplot as plt
 import pickle
+import pandas as pd
+import os
 
 from common.game_state import GameState
 from common.game_state import get_wrapper_by_name
@@ -22,9 +24,52 @@ from common_worker import CommonWorker
 
 logger = logging.getLogger("a3c_training_thread")
 
+# Class for logging a TB row
+class A3C_TB_RowLog():
+    global_t = 0
+    rewards = []
+    batch_cumsum_rewards = []
+    batch_raw_rewards = []
+    # Display everything logged
+    def show(self):
+        print("Global Timstep: {}\nRewards: {}\nTransformed Cumulative Reward: {}\nRaw Cumulative Reward: {}\n\n"\
+            .format(self.global_t, self.rewards, self.batch_cumsum_rewards, self.batch_raw_rewards))
+    # Return everything in the class
+    def getVals(self):
+        return self.global_t, self.rewards, self.batch_cumsum_rewards, self.batch_raw_rewards
+
+# Class for logging a "normal" A3C row
+class A3C_RowLog():
+    global_t = 0
+    rewards = []
+    batch_cumsum_rewards = []
+    # Display everything logged
+    def show(self):
+        print("Global Timstep: {}\nRewards: {}\nCumulative Reward: {}\n\n"\
+            .format(self.global_t, self.rewards, self.batch_cumsum_rewards))
+    # Return everything in the class
+    def getVals(self):
+        return self.global_t, self.rewards, self.batch_cumsum_rewards
+
+# Function that writes to the timestep-reward dictionary
+# TODO: Make this a method of the RowLog class, that writes to a CSV and/or a dataframe
+def dumpRowLog(row_log, pkl_file):
+    try:
+        os.makedirs(os.path.dirname(pkl_file), exist_ok=True)
+        pickle.dump(row_log, open(pkl_file, "a+b"))
+    except:
+        print("\n\n\nSHOULD NOT SEE THIS\n\n\n")
+        os.makedirs(os.path.dirname(pkl_file), exist_ok=True)
+        pickle.dump(row_log, open(pkl_file, "wb"))
+
 # Function that dumps the cumulative rewards to a pickle file (for Yumshu's exercise)
-def dump_cumsum_rewards(cumsum_arr, file_name):
-    pickle.dump(cumsum_arr, open(file_name, "a+b"))
+def logTrainRewards(reward, file_name):
+    try:
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        pickle.dump(reward, open(file_name, "a+b"))
+    except:
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        pickle.dump(reward, open(file_name, "wb"))
 
 
 class A3CTrainingThread(CommonWorker):
@@ -44,6 +89,7 @@ class A3CTrainingThread(CommonWorker):
     use_grad_cam = False
     log_idx = 0
     reward_constant = 0
+
 
     def __init__(self, thread_index, global_net, local_net,
                  initial_learning_rate, learning_rate_input, grad_applier,
@@ -118,8 +164,10 @@ class A3CTrainingThread(CommonWorker):
         rho = []
 
         # LOGGING ARRAYS
-        cumulative_reward_log = []
-        cumulative_sum_reward_log = []
+        if self.transformed_bellman:
+            row_log = A3C_TB_RowLog()
+        else:
+            row_log = A3C_RowLog()
 
         terminal_pseudo = False  # loss of life
         terminal_end = False  # real terminal (lose all lives)
@@ -209,6 +257,16 @@ class A3CTrainingThread(CommonWorker):
                                interpolation=cv2.INTER_AREA)
             cumsum_reward = self.local_net.run_value(sess, state)
 
+        ###### ADD this code ######
+        if self.transformed_bellman:
+            raw_reward = cumsum_reward
+            logTrainRewards(rewards, "results/TB_RewardLogs/tb_raw_rewards.pkl ")
+            row_log.rewards = rewards
+        else:
+            logTrainRewards(rewards, "results/A3C_RewardLogs/ta3c_clipped_rewards.pkl ")
+            row_log.rewards = rewards
+        ###### ADD this code ######
+
         actions.reverse()
         states.reverse()
         rewards.reverse()
@@ -218,14 +276,22 @@ class A3CTrainingThread(CommonWorker):
         batch_action = []
         batch_adv = []
         batch_cumsum_reward = []
+        ###### ADD this code ######
+        if self.transformed_bellman:
+            batch_raw_reward = []
+        ###### ADD this code ######
 
         # compute and accumulate gradients
+        # Cumulative reward computed here. That's the DISCOUNTED FUTURE REWARD
         for(ai, ri, si, vi) in zip(actions, rewards, states, values):
             if self.transformed_bellman:
                 ri = np.sign(ri) * self.reward_constant + ri
                 cumsum_reward = transform_h(ri + self.gamma * transform_h_inv(cumsum_reward))
+                raw_reward = ri + self.gamma * raw_reward
             else:
                 cumsum_reward = ri + self.gamma * cumsum_reward
+
+            # Compute ADVANTAGE: Difference between value of state and (expected ?) cumulative reward
             advantage = cumsum_reward - vi
 
             # convert action to one-hot vector
@@ -236,10 +302,24 @@ class A3CTrainingThread(CommonWorker):
             batch_action.append(a)
             batch_adv.append(advantage)
             batch_cumsum_reward.append(cumsum_reward)
+            if self.transformed_bellman:
+                batch_raw_reward.append(raw_reward)
         
-        # Function I wrote that dumps the array of cumsum rewards
-        dump_cumsum_rewards(batch_cumsum_reward, "cumulative_rewards.pkl")
-        print("\nBATCH CUMSUM REWARDS: {}\nRAW: {}".format(sum(batch_cumsum_reward), batch_cumsum_reward))
+        # Log training raw rewards, and cumulative ones
+        if self.transformed_bellman:
+            logTrainRewards(batch_cumsum_reward, "results/TB_RewardLogs/tb_transformed_returns.pkl")
+            logTrainRewards(batch_raw_reward, "results/TB_RewardLogs/raw_returns.pkl")
+            row_log.batch_cumsum_rewards = batch_cumsum_reward
+            row_log.batch_raw_rewards = batch_raw_reward
+            row_log.global_t = global_t
+            dumpRowLog(row_log, "results/RowLogs/TB_ROW-LOG.pkl")
+            row_log.show()
+        else:
+            logTrainRewards(batch_cumsum_reward, "results/A3C_RewardLogs/a3c_clipped_returns.pkl")
+            row_log.batch_cumsum_rewards = batch_cumsum_reward
+            row_log.global_t = global_t
+            dumpRowLog(row_log, "results/RowLogs/A3C_ROW-LOG.pkl")
+            row_log.show()
 
         cur_learning_rate = self._anneal_learning_rate(global_t,
                 self.initial_learning_rate )

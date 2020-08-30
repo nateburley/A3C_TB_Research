@@ -23,3 +23,36 @@ Yeah, so it looks like what gets written to the results file is the total number
 ALL 16 AGENTS, the TOTAL REWARD accumulated...thus far? Or in this latest round of training? 
 (Presumably the latter, but I need to confirm that with Yunshu.) For a helpful reminder, look at this
 article: https://medium.com/@shagunm1210/implementing-the-a3c-algorithm-to-train-an-agent-to-play-breakout-c0b5ce3b3405
+
+(28 August 2020, 2:07 PM) Update:
+Yunshu gave me a list of tasks to do. She says that I still "don't understand the difference between
+rewards and returns", which...not False! A cursory Googling leads to this (actually super helpful. It
+can be found here for future use: https://spinningup.openai.com/en/latest/index.html) website, that 
+explains that agents receive a REWARD for interacting with the environment, and that their goal is to 
+maximize the RETURN, which is the cumulative reward!
+
+So that leads to a few more questions.
+   1) So that "return", or cumulative reward, is the sum of each of the rewards from all of the
+   actions in a given episode? So each worker interacts with the environment n-times until it "dies", 
+   builds an array of n-states, actions, rewards. The RETURN would thus be the sum of those rewards?
+   So this question can be phrased as, IS THE RETURN COMPUTED FOR EACH WORKER INDIVIDUALLY, OR IS IT
+   TOTALED ACROSS ALL OF THEM?
+
+   2) While we're here, what exactly is a "batch"?
+      Okay wait, so it looks like that's...the total results from the worker interacting with the 
+      environment n = self.local_t_max times?
+
+      Oh! That also explains the logging. The training logging has each individual worker's timesteps,
+      return, etc. And the 'eval' or "global logging" has the GLOBAL timesteps (sum of all the worker steps),
+      and the GLOBAL return (sum of the returns for each worker)?
+
+      [CONFIRM THIS WITH YUNSHU]-- so "training" is basically (do this for each worker):
+         - Interact with the environment max 20 times (self.local_t_max) or less
+         - Store the actions, states, rewards
+         - "Batch" this up. So cumulative reward (RETURN) is the SUM OF EACH OF THE REWARDS, 20 max.
+         (So the batch_cumsum_rewards is a list of the rewards gotten from each of those 20 actions?)
+         - Then, when finished, update the global network?
+
+         - So the columns for the training logging should almost look like:
+         worker_number, total_steps, return, (optional) transformed_return
+
