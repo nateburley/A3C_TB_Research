@@ -25,6 +25,7 @@ from common_worker import CommonWorker
 logger = logging.getLogger("a3c_training_thread")
 
 # Class for logging a TB row
+# TODO: Make this a separate module, add useful functions to handle all the results plotting and such
 class A3C_TB_RowLog():
     global_t = 0
     rewards = []
@@ -260,10 +261,10 @@ class A3CTrainingThread(CommonWorker):
         ###### ADD this code ######
         if self.transformed_bellman:
             raw_reward = cumsum_reward
-            logTrainRewards(rewards, "results/TB_RewardLogs/tb_raw_rewards.pkl ")
+            logTrainRewards(rewards, "results/TB_RewardLogs/MsPacman/tb_raw_rewards.pkl ")
             row_log.rewards = rewards
         else:
-            logTrainRewards(rewards, "results/A3C_RewardLogs/ta3c_clipped_rewards.pkl ")
+            logTrainRewards(rewards, "results/A3C_RewardLogs/MsPacman/a3c_clipped_rewards.pkl ")
             row_log.rewards = rewards
         ###### ADD this code ######
 
@@ -307,18 +308,18 @@ class A3CTrainingThread(CommonWorker):
         
         # Log training raw rewards, and cumulative ones
         if self.transformed_bellman:
-            logTrainRewards(batch_cumsum_reward, "results/TB_RewardLogs/tb_transformed_returns.pkl")
-            logTrainRewards(batch_raw_reward, "results/TB_RewardLogs/raw_returns.pkl")
+            logTrainRewards(batch_cumsum_reward, "results/TB_RewardLogs/MsPacman/tb_transformed_returns.pkl")
+            logTrainRewards(batch_raw_reward, "results/TB_RewardLogs/MsPacman/raw_returns.pkl")
             row_log.batch_cumsum_rewards = batch_cumsum_reward
             row_log.batch_raw_rewards = batch_raw_reward
             row_log.global_t = global_t
-            dumpRowLog(row_log, "results/RowLogs/TB_ROW-LOG.pkl")
+            dumpRowLog(row_log, "results/RowLogs/MsPacman/TB_ROW-LOG.pkl")
             row_log.show()
         else:
             logTrainRewards(batch_cumsum_reward, "results/A3C_RewardLogs/a3c_clipped_returns.pkl")
             row_log.batch_cumsum_rewards = batch_cumsum_reward
             row_log.global_t = global_t
-            dumpRowLog(row_log, "results/RowLogs/A3C_ROW-LOG.pkl")
+            dumpRowLog(row_log, "results/RowLogs/MsPacman/A3C_ROW-LOG.pkl")
             row_log.show()
 
         cur_learning_rate = self._anneal_learning_rate(global_t,
