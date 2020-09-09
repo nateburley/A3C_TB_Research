@@ -79,6 +79,6 @@ def explore_row_log(row_log_pkl, TB=True):
             plt.savefig("plots/A3C_rewards.png")
         
 
-explore_row_log('results/RowLogs/TB_ROW-LOG.pkl')
+explore_row_log('results/RowLogs/MsPacman/TB_ROW-LOG.pkl')
 plt.clf() # Clear the figures in-between datasets
-explore_row_log('results/RowLogs/A3C_ROW-LOG.pkl', TB=False)
+explore_row_log('results/RowLogs/MsPacman/A3C_ROW-LOG.pkl', TB=False)
