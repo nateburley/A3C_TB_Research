@@ -1,5 +1,3 @@
-## NOTE: This needs to be updated to actually run A3C TB. Right now, this is just A3C.
-
 #!/bin/bash
 #PBS -V       					##load env parameters
 #PBS -N A3C_TB         				## Job name

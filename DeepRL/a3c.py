@@ -239,7 +239,7 @@ def run_a3c(args):
                     reward_t = parallel_worker.testing(sess, args.eval_max_steps, global_t, folder, worker=all_workers[-1])[0]
                     trans_reward_t = transform_h(reward_t + 0.99 * transform_h_inv(reward_t))
                     rewards['eval'][step_t] = [reward_t, trans_reward_t]
-                    print("\n\n\nGLOBAL_T: {}\nREWARD: {}\nTRANS REWARD: {}\ R[EVAL]: {}\n\n\n".format(global_t, reward_t, trans_reward_t, rewards['eval'][step_t]))
+                    #print("\n\n\nGLOBAL_T: {}\nREWARD: {}\nTRANS REWARD: {}\ R[EVAL]: {}\n\n\n".format(global_t, reward_t, trans_reward_t, rewards['eval'][step_t]))
                     save_best_model(rewards['eval'][step_t][0])
 
                 if global_t > next_save_t:

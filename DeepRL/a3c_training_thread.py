@@ -316,7 +316,7 @@ class A3CTrainingThread(CommonWorker):
             dumpRowLog(row_log, "results/RowLogs/MsPacman/TB_ROW-LOG.pkl")
             row_log.show()
         else:
-            logTrainRewards(batch_cumsum_reward, "results/A3C_RewardLogs/a3c_clipped_returns.pkl")
+            logTrainRewards(batch_cumsum_reward, "results/A3C_RewardLogs/MsPacman/a3c_clipped_returns.pkl")
             row_log.batch_cumsum_rewards = batch_cumsum_reward
             row_log.global_t = global_t
             dumpRowLog(row_log, "results/RowLogs/MsPacman/A3C_ROW-LOG.pkl")

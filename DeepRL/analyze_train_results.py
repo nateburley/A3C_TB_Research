@@ -22,7 +22,7 @@ def explore_row_log(row_log_pkl, TB=True):
                         rewards.append(reward)
                         raw_returns.append(raw_return)
                         tb_returns.append(batch_return)
-                except EOFError:
+                except:
                     break
             
             # Plot a histogram of raw vs. TB returns
@@ -56,7 +56,7 @@ def explore_row_log(row_log_pkl, TB=True):
                     for reward, batch_return in zip(batch.rewards, batch.batch_cumsum_rewards):
                         rewards.append(reward)
                         cumsum_rewards.append(batch_return)
-                except EOFError:
+                except:
                     break
 
             # Plot historgram of returns
@@ -79,6 +79,6 @@ def explore_row_log(row_log_pkl, TB=True):
             plt.savefig("plots/A3C_rewards.png")
         
 
-explore_row_log('results/RowLogs/MsPacman/TB_ROW-LOG.pkl')
+explore_row_log('results/TRIAL1-MsPacman/TB_ROW-LOG.pkl')
 plt.clf() # Clear the figures in-between datasets
-explore_row_log('results/RowLogs/MsPacman/A3C_ROW-LOG.pkl', TB=False)
+explore_row_log('results/TRIAL1-MsPacman/A3C_ROW-LOG.pkl', TB=False)
