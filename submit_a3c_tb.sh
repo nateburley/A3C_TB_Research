@@ -30,6 +30,7 @@ singularity exec -H $cwd $image python3 DeepRL/run_experiment.py \
     --parallel-size=16 \
     --max-time-step-fraction=0.5 \
     --use-mnih-2015 --padding=SAME --input-shape=88 \
+    --unclipped-reward \
     --transformed-bellman \
     --append-experiment-num=${PBS_ARRAYID} \
     --save-to=/data/datascience/A3C_TB_Research/results/TB \
