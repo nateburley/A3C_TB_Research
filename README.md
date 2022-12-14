@@ -1,4 +1,4 @@
-# Summer20 UG project: When does the Transformed Bellman Operator help in A3C
+# Summer '20 UG project: When Does the Transformed Bellman Operator Help in A3C?
 
 ## About
 
